@@ -51,25 +51,6 @@
       }
     });
 
-//<script>
-  // Animate sections on scroll
-   function revealSections() {
-     const sections = document.querySelectorAll('section');
-     const windowHeight = window.innerHeight;
-     sections.forEach((section) => {
-       const rect = section.getBoundingClientRect();
-       if (rect.top <= windowHeight * 0.85) {
-         section.classList.add('visible');
-       }
-     });
-   }
-
-   window.addEventListener('scroll', revealSections);
-   window.addEventListener('load', revealSections);
- //</script>
-
-
-
 document.addEventListener('DOMContentLoaded', function() {
         const sliderWrapper = document.getElementById('sliderWrapper');
         const sliderContainer = document.querySelector('.slider-container');
@@ -229,93 +210,86 @@ document.addEventListener('DOMContentLoaded', function() {
         // DIRECT MOUSE/TOUCH DRAGGING
         let isDragging = false;
         let startX = 0;
+        let startY = 0;
         let startScrollPosition = 0;
         let lastTouchTime = 0;
-        let initialTouchY = 0;
-        let touchMoveDirectionChecked = false;
+        let isHorizontalDrag = null;
         
-        // Update dragStart to handle links
         function handleDragStart(e) {
             // Store touch time for tap detection
             lastTouchTime = new Date().getTime();
             
-            const initialX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
-            const initialY = e.type.includes('mouse') ? e.pageY : e.touches[0].clientY;
+            startX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+            startY = e.type.includes('mouse') ? e.pageY : e.touches[0].clientY;
             
-            initialTouchY = initialY;
-            touchMoveDirectionChecked = false;
+            // We'll determine direction during the first move event
+            isHorizontalDrag = null;
             
-            // Only start dragging after a small threshold to distinguish from clicks
-            const handleActualStart = function(moveEvent) {
-                const currentX = moveEvent.type.includes('mouse') ? moveEvent.pageX : moveEvent.touches[0].clientX;
-                const currentY = moveEvent.type.includes('mouse') ? moveEvent.pageY : moveEvent.touches[0].clientY;
-                
-                // Calculate distance moved
-                const distX = Math.abs(currentX - initialX);
-                const distY = Math.abs(currentY - initialY);
-                
-                // If not yet determined direction
-                if (!touchMoveDirectionChecked) {
-                    // If more vertical than horizontal movement on touch devices
-                    if (!moveEvent.type.includes('mouse') && distY > distX && distY > 10) {
-                        // Don't start dragging, let page scroll naturally
-                        if (moveEvent.type.includes('mouse')) {
-                            window.removeEventListener('mousemove', handleActualStart);
-                        } else {
-                            window.removeEventListener('touchmove', handleActualStart);
-                        }
-                        return;
-                    }
-                    
-                    touchMoveDirectionChecked = true;
-                }
-                
-                // If moved more than 5px horizontally, consider it a drag
-                if (distX > 5) {
-                    stopAutoSlide();
-                    isDragging = true;
-                    startX = currentX;
-                    startScrollPosition = scrollPosition;
-                    sliderWrapper.style.transition = 'none';
-                    
-                    // Remove these event listeners since we're now in drag mode
-                    if (moveEvent.type.includes('mouse')) {
-                        window.removeEventListener('mousemove', handleActualStart);
-                    } else {
-                        window.removeEventListener('touchmove', handleActualStart);
-                    }
-                }
-            };
-            
-            // Add temporary listeners to check if this is a drag or a click
+            // Start tracking this touch
             if (e.type.includes('mouse')) {
-                window.addEventListener('mousemove', handleActualStart);
-                window.addEventListener('mouseup', function cleanup() {
-                    window.removeEventListener('mousemove', handleActualStart);
-                    window.removeEventListener('mouseup', cleanup);
-                });
+                document.addEventListener('mousemove', handleDragMove, { passive: false });
+                document.addEventListener('mouseup', handleDragEnd, { passive: false });
             } else {
-                window.addEventListener('touchmove', handleActualStart);
-                window.addEventListener('touchend', function cleanup() {
-                    window.removeEventListener('touchmove', handleActualStart);
-                    window.removeEventListener('touchend', cleanup);
-                });
+                document.addEventListener('touchmove', handleDragMove, { passive: false });
+                document.addEventListener('touchend', handleDragEnd, { passive: false });
             }
             
-            // Only prevent default for mouse to allow touch scrolling elsewhere
+            // Record starting position but don't commit to dragging yet
+            startScrollPosition = scrollPosition;
+            
+            // Only prevent default for mouse events
             if (e.type.includes('mouse')) {
                 e.preventDefault();
             }
         }
         
         function handleDragMove(e) {
-            if (!isDragging) return;
-            
             const x = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
-            const diff = x - startX;
+            const y = e.type.includes('mouse') ? e.pageY : e.touches[0].clientY;
+            
+            const diffX = x - startX;
+            const diffY = y - startY;
+            
+            // If we haven't determined direction yet, do so now
+            if (isHorizontalDrag === null) {
+                // If movement is very small, don't decide yet
+                if (Math.abs(diffX) < 5 && Math.abs(diffY) < 5) {
+                    return;
+                }
+                
+                // Determine if this is primarily horizontal or vertical movement
+                isHorizontalDrag = Math.abs(diffX) > Math.abs(diffY);
+                
+                // If it's vertical movement, don't interfere with page scrolling
+                if (!isHorizontalDrag) {
+                    isDragging = false;
+                    
+                    // Clean up event listeners
+                    if (e.type.includes('mouse')) {
+                        document.removeEventListener('mousemove', handleDragMove);
+                        document.removeEventListener('mouseup', handleDragEnd);
+                    } else {
+                        document.removeEventListener('touchmove', handleDragMove);
+                        document.removeEventListener('touchend', handleDragEnd);
+                    }
+                    return;
+                }
+                
+                // Now we're committed to horizontal dragging
+                isDragging = true;
+                stopAutoSlide();
+                sliderWrapper.style.transition = 'none';
+            }
+            
+            // If this is vertical scrolling, exit and let the browser handle it
+            if (!isHorizontalDrag) {
+                return;
+            }
+            
+            // At this point, we know it's horizontal dragging
             
             // Calculate new position
-            let newPos = startScrollPosition + diff;
+            let newPos = startScrollPosition + diffX;
             
             // Add resistance at edges
             const minScroll = -maxIndex * cardWidth;
@@ -330,19 +304,32 @@ document.addEventListener('DOMContentLoaded', function() {
             scrollPosition = newPos;
             sliderWrapper.style.transform = `translateX(${scrollPosition}px)`;
             
-            // Prevent default only for mouse to allow touch scrolling elsewhere
-            if (e.type.includes('mouse')) {
+            // Only prevent default for horizontal drags to enable vertical scrolling
+            if (isHorizontalDrag) {
                 e.preventDefault();
             }
         }
         
         function handleDragEnd(e) {
-            if (!isDragging) {
-                // This was just a tap/click, let it propagate
+            // Clean up event listeners
+            if (e.type.includes('mouse')) {
+                document.removeEventListener('mousemove', handleDragMove);
+                document.removeEventListener('mouseup', handleDragEnd);
+            } else {
+                document.removeEventListener('touchmove', handleDragMove);
+                document.removeEventListener('touchend', handleDragEnd);
+            }
+            
+            // If this wasn't a horizontal drag, exit
+            if (!isDragging || !isHorizontalDrag) {
+                isDragging = false;
+                isHorizontalDrag = null;
                 return;
             }
             
             isDragging = false;
+            isHorizontalDrag = null;
+            
             const diff = scrollPosition - startScrollPosition;
             
             // Determine if we should change slides based on drag distance
@@ -363,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Resume auto-slide after delay
             setTimeout(startAutoSlide, 2000);
             
-            // Prevent default only for mouse
+            // Prevent default only for mouse events
             if (e.type.includes('mouse')) {
                 e.preventDefault();
             }
@@ -374,15 +361,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Mouse events
+        // Mouse events - attach only to slider
         sliderWrapper.addEventListener('mousedown', handleDragStart);
-        window.addEventListener('mousemove', handleDragMove);
-        window.addEventListener('mouseup', handleDragEnd);
         
-        // Touch events
+        // Touch events - attach only to slider
         sliderWrapper.addEventListener('touchstart', handleDragStart, { passive: true });
-        window.addEventListener('touchmove', handleDragMove, { passive: true });
-        window.addEventListener('touchend', handleDragEnd, { passive: true });
         
         // Auto-slide functionality
         let autoSlideInterval;
