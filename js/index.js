@@ -52,327 +52,117 @@
     });
 
 document.addEventListener('DOMContentLoaded', function() {
-        const sliderWrapper = document.getElementById('sliderWrapper');
-        const sliderContainer = document.querySelector('.slider-container');
-        const cards = document.querySelectorAll('.slider-card');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const indicators = document.getElementById('indicators');
+    const sliderWrapper = document.getElementById('sliderWrapper');
+    const sliderContainer = document.querySelector('.slider-container');
+    const cards = document.querySelectorAll('.slider-card');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const indicators = document.getElementById('indicators');
+    
+    let cardWidth = 0;
+    let cardMargin = 0;
+    let cardGap = 0;
+    let currentIndex = 0;
+    let maxIndex = 0;
+    let scrollPosition = 0;
+    let autoSlideInterval;
+    let isTouching = false;
+    let lastWheelTime = 0;
+    let wheelDelta = 0;
+    
+    // Calculate card width and other dimensions
+    function updateSliderDimensions() {
+        // Get the first card
+        if (!cards.length) return;
         
-        let cardWidth = cards[0].offsetWidth;
-        let currentIndex = 0;
-        let maxIndex = 0;
-        let scrollPosition = 0;
-        let isScrolling = false;
-        let scrollTimeout = null;
+        const firstCard = cards[0];
+        const cardStyle = window.getComputedStyle(firstCard);
         
-        // Calculate how many cards to display based on screen width
-        function updateSliderDimensions() {
-            cardWidth = cards[0].offsetWidth;
-            const viewportWidth = window.innerWidth;
-            
-            let visibleCards = 1;
-            if (viewportWidth >= 1024) {
-                visibleCards = 3;
-            } else if (viewportWidth >= 768) {
-                visibleCards = 2;
-            }
-            
-            maxIndex = Math.max(0, cards.length - visibleCards);
-            
-            // Ensure current index is still valid after resize
-            currentIndex = Math.min(currentIndex, maxIndex);
-            
-            updateSliderPosition();
-            updateIndicators();
+        // Calculate the full width including margins and padding
+        const marginLeft = parseFloat(cardStyle.marginLeft) || 0;
+        const marginRight = parseFloat(cardStyle.marginRight) || 0;
+        const paddingLeft = parseFloat(cardStyle.paddingLeft) || 0;
+        const paddingRight = parseFloat(cardStyle.paddingRight) || 0;
+        
+        // Set the cardWidth to the actual width of the card including padding
+        cardWidth = firstCard.offsetWidth;
+        cardMargin = marginLeft + marginRight;
+        cardGap = cardMargin;
+        
+        // Determine visible cards based on viewport width
+        let visibleCards = 1;
+        if (window.innerWidth >= 1024) {
+            visibleCards = 3;
+        } else if (window.innerWidth >= 768) {
+            visibleCards = 2;
         }
         
-        // Create indicators
-        function createIndicators() {
-            indicators.innerHTML = '';
-            for (let i = 0; i <= maxIndex; i++) {
-                const indicator = document.createElement('div');
-                indicator.classList.add('indicator');
-                if (i === currentIndex) {
-                    indicator.classList.add('active');
-                }
-                indicator.addEventListener('click', () => {
-                    currentIndex = i;
-                    updateSliderPosition();
-                    updateIndicators();
-                });
-                indicators.appendChild(indicator);
-            }
-        }
+        // Adjust max index based on visible cards
+        maxIndex = Math.max(0, cards.length - visibleCards);
         
-        // Update indicators based on current index
-        function updateIndicators() {
-            const indicatorDots = document.querySelectorAll('.indicator');
-            indicatorDots.forEach((dot, index) => {
-                if (index === currentIndex) {
-                    dot.classList.add('active');
-                } else {
-                    dot.classList.remove('active');
-                }
-            });
-        }
+        // Ensure current index is still valid after resize
+        currentIndex = Math.min(currentIndex, maxIndex);
         
         // Update slider position
-        function updateSliderPosition(animation = true) {
-            if (animation) {
-                sliderWrapper.style.transition = 'transform 0.3s ease-out';
-            } else {
-                sliderWrapper.style.transition = 'none';
-            }
-            scrollPosition = -currentIndex * cardWidth;
-            sliderWrapper.style.transform = `translateX(${scrollPosition}px)`;
-        }
+        updateSliderPosition(false);
         
-        // Initialize
-        updateSliderDimensions();
+        // Recreate indicators based on new maxIndex
         createIndicators();
-        
-        // Event listeners
-        window.addEventListener('resize', function() {
-            updateSliderDimensions();
-            createIndicators();
-        });
-        
-        prevBtn.addEventListener('click', function() {
-            if (currentIndex > 0) {
-                currentIndex--;
+    }
+    
+    // Create indicators based on maxIndex
+    function createIndicators() {
+        indicators.innerHTML = '';
+        for (let i = 0; i <= maxIndex; i++) {
+            const indicator = document.createElement('div');
+            indicator.classList.add('indicator');
+            if (i === currentIndex) {
+                indicator.classList.add('active');
+            }
+            indicator.addEventListener('click', () => {
+                currentIndex = i;
                 updateSliderPosition();
                 updateIndicators();
-                stopAutoSlide();
-                setTimeout(startAutoSlide, 2000);
+                resetAutoSlide();
+            });
+            indicators.appendChild(indicator);
+        }
+    }
+    
+    // Update indicators based on current index
+    function updateIndicators() {
+        const indicatorDots = document.querySelectorAll('.indicator');
+        indicatorDots.forEach((dot, index) => {
+            if (index === currentIndex) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
             }
         });
+    }
+    
+    // Update slider position
+    function updateSliderPosition(animate = true) {
+        if (!sliderWrapper) return;
         
-        nextBtn.addEventListener('click', function() {
-            if (currentIndex < maxIndex) {
-                currentIndex++;
-                updateSliderPosition();
-                updateIndicators();
-                stopAutoSlide();
-                setTimeout(startAutoSlide, 2000);
-            }
-        });
-        
-        // FIXED WHEEL EVENT - Now properly handles vertical scrolling
-        sliderContainer.addEventListener('wheel', function(e) {
-            // Check if this is primarily horizontal scrolling
-            // If deltaX is significantly larger than deltaY, we handle it as horizontal
-            // Otherwise, allow normal page vertical scrolling
-            if (Math.abs(e.deltaX) > Math.abs(e.deltaY) * 1.5) {
-                e.preventDefault(); // Only prevent default for horizontal scrolls
-                
-                stopAutoSlide();
-                isScrolling = true;
-                
-                // Move slider based on deltaX (horizontal scrolling)
-                let newPosition = scrollPosition - e.deltaX;
-                
-                // Apply boundaries
-                const minScroll = -maxIndex * cardWidth;
-                const maxScroll = 0;
-                
-                if (newPosition < minScroll) {
-                    newPosition = minScroll;
-                } else if (newPosition > maxScroll) {
-                    newPosition = maxScroll;
-                }
-                
-                // Apply the transform with minimal latency
-                sliderWrapper.style.transition = 'none';
-                sliderWrapper.style.transform = `translateX(${newPosition}px)`;
-                scrollPosition = newPosition;
-                
-                // Debounce the snap-to-slide functionality
-                clearTimeout(scrollTimeout);
-                scrollTimeout = setTimeout(function() {
-                    isScrolling = false;
-                    
-                    // Calculate which slide we're closest to
-                    currentIndex = Math.round(Math.abs(scrollPosition) / cardWidth);
-                    currentIndex = Math.max(0, Math.min(currentIndex, maxIndex));
-                    
-                    // Snap to that slide
-                    updateSliderPosition();
-                    updateIndicators();
-                    
-                    // Resume auto-slide after delay
-                    setTimeout(startAutoSlide, 2000);
-                }, 150);
-            }
-            // If it's more vertical than horizontal, do nothing and let the page scroll naturally
-        }, { passive: false });
-        
-        // DIRECT MOUSE/TOUCH DRAGGING
-        let isDragging = false;
-        let startX = 0;
-        let startY = 0;
-        let startScrollPosition = 0;
-        let lastTouchTime = 0;
-        let isHorizontalDrag = null;
-        
-        function handleDragStart(e) {
-            // Store touch time for tap detection
-            lastTouchTime = new Date().getTime();
-            
-            startX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
-            startY = e.type.includes('mouse') ? e.pageY : e.touches[0].clientY;
-            
-            // We'll determine direction during the first move event
-            isHorizontalDrag = null;
-            
-            // Start tracking this touch
-            if (e.type.includes('mouse')) {
-                document.addEventListener('mousemove', handleDragMove, { passive: false });
-                document.addEventListener('mouseup', handleDragEnd, { passive: false });
-            } else {
-                document.addEventListener('touchmove', handleDragMove, { passive: false });
-                document.addEventListener('touchend', handleDragEnd, { passive: false });
-            }
-            
-            // Record starting position but don't commit to dragging yet
-            startScrollPosition = scrollPosition;
-            
-            // Only prevent default for mouse events
-            if (e.type.includes('mouse')) {
-                e.preventDefault();
-            }
+        if (animate) {
+            sliderWrapper.style.transition = 'transform 0.3s ease-out';
+        } else {
+            sliderWrapper.style.transition = 'none';
         }
         
-        function handleDragMove(e) {
-            const x = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
-            const y = e.type.includes('mouse') ? e.pageY : e.touches[0].clientY;
-            
-            const diffX = x - startX;
-            const diffY = y - startY;
-            
-            // If we haven't determined direction yet, do so now
-            if (isHorizontalDrag === null) {
-                // If movement is very small, don't decide yet
-                if (Math.abs(diffX) < 5 && Math.abs(diffY) < 5) {
-                    return;
-                }
-                
-                // Determine if this is primarily horizontal or vertical movement
-                isHorizontalDrag = Math.abs(diffX) > Math.abs(diffY);
-                
-                // If it's vertical movement, don't interfere with page scrolling
-                if (!isHorizontalDrag) {
-                    isDragging = false;
-                    
-                    // Clean up event listeners
-                    if (e.type.includes('mouse')) {
-                        document.removeEventListener('mousemove', handleDragMove);
-                        document.removeEventListener('mouseup', handleDragEnd);
-                    } else {
-                        document.removeEventListener('touchmove', handleDragMove);
-                        document.removeEventListener('touchend', handleDragEnd);
-                    }
-                    return;
-                }
-                
-                // Now we're committed to horizontal dragging
-                isDragging = true;
-                stopAutoSlide();
-                sliderWrapper.style.transition = 'none';
-            }
-            
-            // If this is vertical scrolling, exit and let the browser handle it
-            if (!isHorizontalDrag) {
-                return;
-            }
-            
-            // At this point, we know it's horizontal dragging
-            
-            // Calculate new position
-            let newPos = startScrollPosition + diffX;
-            
-            // Add resistance at edges
-            const minScroll = -maxIndex * cardWidth;
-            if (newPos > 0) {
-                newPos = newPos / 3; // Resistance at start
-            } else if (newPos < minScroll) {
-                const overScroll = newPos - minScroll;
-                newPos = minScroll + (overScroll / 3); // Resistance at end
-            }
-            
-            // Apply new position
-            scrollPosition = newPos;
-            sliderWrapper.style.transform = `translateX(${scrollPosition}px)`;
-            
-            // Only prevent default for horizontal drags to enable vertical scrolling
-            if (isHorizontalDrag) {
-                e.preventDefault();
-            }
-        }
+        // Calculate position based on current index, card width and gap
+        scrollPosition = -currentIndex * (cardWidth + cardGap/2);
         
-        function handleDragEnd(e) {
-            // Clean up event listeners
-            if (e.type.includes('mouse')) {
-                document.removeEventListener('mousemove', handleDragMove);
-                document.removeEventListener('mouseup', handleDragEnd);
-            } else {
-                document.removeEventListener('touchmove', handleDragMove);
-                document.removeEventListener('touchend', handleDragEnd);
-            }
-            
-            // If this wasn't a horizontal drag, exit
-            if (!isDragging || !isHorizontalDrag) {
-                isDragging = false;
-                isHorizontalDrag = null;
-                return;
-            }
-            
-            isDragging = false;
-            isHorizontalDrag = null;
-            
-            const diff = scrollPosition - startScrollPosition;
-            
-            // Determine if we should change slides based on drag distance
-            if (Math.abs(diff) > cardWidth / 3) {
-                if (diff > 0) {
-                    // Dragged right
-                    currentIndex = Math.max(0, currentIndex - 1);
-                } else {
-                    // Dragged left
-                    currentIndex = Math.min(maxIndex, currentIndex + 1);
-                }
-            }
-            
-            // Snap to nearest slide
-            updateSliderPosition();
-            updateIndicators();
-            
-            // Resume auto-slide after delay
-            setTimeout(startAutoSlide, 2000);
-            
-            // Prevent default only for mouse events
-            if (e.type.includes('mouse')) {
-                e.preventDefault();
-            }
-            
-            // If this was a significant drag, prevent click events
-            if (Math.abs(diff) > 5) {
-                e.stopPropagation();
-            }
-        }
-        
-        // Mouse events - attach only to slider
-        sliderWrapper.addEventListener('mousedown', handleDragStart);
-        
-        // Touch events - attach only to slider
-        sliderWrapper.addEventListener('touchstart', handleDragStart, { passive: true });
-        
-        // Auto-slide functionality
-        let autoSlideInterval;
-        
-        function startAutoSlide() {
-            stopAutoSlide(); // Clear any existing intervals
-            autoSlideInterval = setInterval(() => {
+        // Apply transform with translateX
+        sliderWrapper.style.transform = `translateX(${scrollPosition}px)`;
+    }
+    
+    // Start auto sliding functionality
+    function startAutoSlide() {
+        stopAutoSlide();
+        autoSlideInterval = setInterval(() => {
+            if (!isTouching) {
                 if (currentIndex < maxIndex) {
                     currentIndex++;
                 } else {
@@ -380,50 +170,248 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 updateSliderPosition();
                 updateIndicators();
-            }, 5000); // Change slides every 5 seconds
+            }
+        }, 5000);
+    }
+    
+    // Stop auto sliding
+    function stopAutoSlide() {
+        clearInterval(autoSlideInterval);
+    }
+    
+    // Reset auto slide (stop and restart)
+    function resetAutoSlide() {
+        stopAutoSlide();
+        startAutoSlide();
+    }
+    
+    // Initialize slider
+    function initSlider() {
+        // Ensure elements exist
+        if (!sliderWrapper || !cards.length) {
+            console.error('Slider elements not found');
+            return;
         }
         
-        function stopAutoSlide() {
-            clearInterval(autoSlideInterval);
-        }
+        // Set initial dimensions
+        updateSliderDimensions();
         
-        // Start auto-sliding
+        // Create indicators
+        createIndicators();
+        
+        // Start auto sliding
         startAutoSlide();
         
-        // Stop auto-sliding when user interacts with the slider
-        sliderContainer.addEventListener('mouseenter', stopAutoSlide);
+        // Event listeners for navigation buttons
+        if (prevBtn) {
+            prevBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    updateSliderPosition();
+                    updateIndicators();
+                    resetAutoSlide();
+                }
+            });
+        }
         
-        // Resume auto-sliding when user stops interacting
-        sliderContainer.addEventListener('mouseleave', function() {
-            if (!isDragging && !isScrolling) {
-                startAutoSlide();
+        if (nextBtn) {
+            nextBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (currentIndex < maxIndex) {
+                    currentIndex++;
+                    updateSliderPosition();
+                    updateIndicators();
+                    resetAutoSlide();
+                }
+            });
+        }
+        
+        // Variables for drag/touch functionality
+        let isDragging = false;
+        let startX, startScrollPosition;
+        let lastTouchTime = 0;
+        let touchMoved = false;
+        
+        // Touch start / Mouse down
+        function handleDragStart(e) {
+            isDragging = true;
+            isTouching = true;
+            touchMoved = false;
+            lastTouchTime = new Date().getTime();
+            
+            // Get start position
+            startX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+            startScrollPosition = scrollPosition;
+            
+            // Disable transition for responsive dragging
+            sliderWrapper.style.transition = 'none';
+            
+            // Stop auto sliding during interaction
+            stopAutoSlide();
+            
+            // Don't prevent default here to allow other touch interactions
+        }
+        
+        // Touch move / Mouse move
+        function handleDragMove(e) {
+            if (!isDragging) return;
+            
+            // Get current position
+            const x = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+            const diffX = x - startX;
+            
+            // Only handle horizontal movement if significant
+            if (Math.abs(diffX) > 5) {
+                touchMoved = true;
+                // Calculate new position with resistance at edges
+                let newPosition = startScrollPosition + diffX;
+                
+                // Add resistance at edges
+                const minScroll = -maxIndex * (cardWidth + cardGap/2);
+                if (newPosition > 0) {
+                    newPosition = newPosition / 3; // Resistance at start
+                } else if (newPosition < minScroll) {
+                    const overScroll = newPosition - minScroll;
+                    newPosition = minScroll + (overScroll / 3); // Resistance at end
+                }
+                
+                // Apply new position
+                scrollPosition = newPosition;
+                sliderWrapper.style.transform = `translateX(${scrollPosition}px)`;
+                
+                // Prevent default to avoid page scrolling while dragging horizontally
+                if (Math.abs(diffX) > 10) {
+                    e.preventDefault();
+                }
             }
-        });
+        }
         
-        // Ensure the slider is responsive to orientation changes
-        window.addEventListener('orientationchange', function() {
-            // Small delay to ensure accurate dimensions after rotation
-            setTimeout(updateSliderDimensions, 200);
-        });
+        // Touch end / Mouse up
+        function handleDragEnd(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            // Re-enable transitions
+            sliderWrapper.style.transition = 'transform 0.3s ease-out';
+            
+            // Only process if touch actually moved
+            if (touchMoved) {
+                // Calculate drag distance
+                const diff = scrollPosition - startScrollPosition;
+                
+                // Determine if we should change slides based on drag distance
+                if (Math.abs(diff) > cardWidth / 4) {
+                    if (diff > 0) {
+                        // Dragged right
+                        currentIndex = Math.max(0, currentIndex - 1);
+                    } else {
+                        // Dragged left
+                        currentIndex = Math.min(maxIndex, currentIndex + 1);
+                    }
+                }
+            }
+            
+            // Snap to nearest slide
+            updateSliderPosition();
+            updateIndicators();
+            
+            // Set flag for touch ended
+            setTimeout(() => {
+                isTouching = false;
+                startAutoSlide();
+            }, 100);
+        }
         
-        // Keyboard navigation
+        // Add event listeners for touch/mouse events
+        sliderWrapper.addEventListener('mousedown', handleDragStart);
+        sliderWrapper.addEventListener('touchstart', handleDragStart, { passive: true });
+        
+        // Use passive: false for touchmove to allow preventDefault
+        document.addEventListener('mousemove', handleDragMove);
+        document.addEventListener('touchmove', handleDragMove, { passive: false });
+        
+        document.addEventListener('mouseup', handleDragEnd);
+        document.addEventListener('touchend', handleDragEnd);
+        
+        // Make sure dragging ends if mouse leaves the window
+        document.addEventListener('mouseleave', handleDragEnd);
+        
+        // Handle keyboard navigation
         document.addEventListener('keydown', function(e) {
             if (e.key === 'ArrowLeft') {
                 if (currentIndex > 0) {
                     currentIndex--;
                     updateSliderPosition();
                     updateIndicators();
-                    stopAutoSlide();
-                    setTimeout(startAutoSlide, 2000);
+                    resetAutoSlide();
                 }
             } else if (e.key === 'ArrowRight') {
                 if (currentIndex < maxIndex) {
                     currentIndex++;
                     updateSliderPosition();
                     updateIndicators();
-                    stopAutoSlide();
-                    setTimeout(startAutoSlide, 2000);
+                    resetAutoSlide();
                 }
             }
         });
-    });
+        
+    // Handle horizontal trackpad scrolling or trackpad pinch-zoom horizontal movement
+    sliderContainer.addEventListener('wheel', function(e) {
+        // If we detect horizontal scrolling (deltaX) or shift+wheel (which is often horizontal scrolling)
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey) {
+            e.preventDefault(); // Prevent page scrolling
+
+            // Accumulate wheel delta for smoother scrolling
+            wheelDelta += e.deltaX;
+            
+            // Throttle wheel events to avoid too rapid changes
+            const now = new Date().getTime();
+            if (now - lastWheelTime > 50) { // 50ms throttle
+                lastWheelTime = now;
+                
+                // If significant horizontal scroll detected
+                if (Math.abs(wheelDelta) > 50) {
+                    if (wheelDelta > 0) {
+                        // Scrolled right (positive deltaX)
+                        if (currentIndex < maxIndex) {
+                            currentIndex++;
+                            updateSliderPosition();
+                            updateIndicators();
+                            resetAutoSlide();
+                        }
+                    } else {
+                        // Scrolled left (negative deltaX)
+                        if (currentIndex > 0) {
+                            currentIndex--;
+                            updateSliderPosition();
+                            updateIndicators();
+                            resetAutoSlide();
+                        }
+                    }
+                    wheelDelta = 0; // Reset accumulated delta
+                }
+            }
+        }
+    }, { passive: false });
+        
+        // Handle window resize
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            // Debounce resize event to prevent multiple recalculations
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function() {
+                updateSliderDimensions();
+            }, 250);
+        });
+        
+        // Handle orientation change
+        window.addEventListener('orientationchange', function() {
+            // Recalculate dimensions after orientation change
+            setTimeout(updateSliderDimensions, 500);
+        });
+    }
+    
+    // Initialize the slider
+    initSlider();
+});
