@@ -72,138 +72,130 @@
      </a>
     </div>
   </main>
-  <div class="container">
-    <div class="section-header">
-     Our Training and Internship Programs
+      <div class="container">
+        <div class="section-header">
+            Our Training and Internship Programs
+        </div>
+    
+        <div class="slider-container">
+            <div class="slider-wrapper" id="sliderWrapper">
+                <div class="slider-card">
+                    <a href="#" class="card-link">
+                        <div class="card-content">
+                            <div class="card-image">
+                                <img src="imgs/1-removebg-preview.png" alt="Warm-Up Coding">
+                            </div>
+                            <div class="card-info">
+                                <span class="card-badge badge-new">New</span>
+                                <h3 class="card-title">Warm-Up Coding</h3>
+                                <p class="card-description">C/C++ system optimization, Python/PHP web solutions.</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="slider-card">
+                    <a href="#" class="card-link">
+                        <div class="card-content">
+                            <div class="card-image">
+                                <img src="imgs/2-removebg-preview.png" alt="Trifecta of the Web">
+                            </div>
+                            <div class="card-info">
+                                <span class="card-badge badge-updated">Updated</span>
+                                <h3 class="card-title">Trifecta of the Web</h3>
+                                <p class="card-description">HTML/CSS design, JS interactive web apps.</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="slider-card">
+                    <a href="#" class="card-link">
+                        <div class="card-content">
+                            <div class="card-image">
+                                <img src="imgs/MERN stack.svg" alt="MERN Stack">
+                            </div>
+                            <div class="card-info">
+                                <span class="card-badge badge-new">New</span>
+                                <h3 class="card-title">MERN Stack</h3>
+                                <p class="card-description">MongoDB, Express, React, Node full-stack JavaScript development.</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="slider-card">
+                    <a href="#" class="card-link">
+                        <div class="card-content">
+                            <div class="card-image">
+                                <img src="imgs/java.svg" alt="JAVA">
+                            </div>
+                            <div class="card-info">
+                                <span class="card-badge badge-new">New</span>
+                                <h3 class="card-title">JAVA</h3>
+                                <p class="card-description">Java, Spring, Hibernate – robust backend development for enterprise applications.</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="slider-card">
+                    <a href="#" class="card-link">
+                        <div class="card-content">
+                            <div class="card-image">
+                                <img src="imgs/devops-2.svg" alt="DevOps">
+                            </div>
+                            <div class="card-info">
+                                <span class="card-badge badge-updated">Updated</span>
+                                <h3 class="card-title">DevOps</h3>
+                                <p class="card-description">DevOps automates development, testing, deployment, and monitoring for efficiency.</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="slider-card">
+                    <a href="#" class="card-link">
+                        <div class="card-content">
+                            <div class="card-image">
+                                <img src="imgs/MLOPS.png" alt="MLOps">
+                            </div>
+                            <div class="card-info">
+                                <span class="card-badge badge-new">New</span>
+                                <h3 class="card-title">MLOps</h3>
+                                <p class="card-description">Machine learning operations for streamlined AI deployment.</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="slider-card">
+                    <a href="#" class="card-link">
+                        <div class="card-content">
+                            <div class="card-image">
+                                <img src="imgs/redhat.svg" alt="Red Hat Linux 9">
+                            </div>
+                            <div class="card-info">
+                                <span class="card-badge badge-new">New</span>
+                                <h3 class="card-title">Red Hat Linux 9</h3>
+                                <p class="card-description">Secure, stable, enterprise-grade operating system platform.</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    
+        <div class="navigation-buttons">
+            <button class="nav-button" id="prevBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24">
+                    <path fill="none" stroke="currentColor" stroke-width="2" d="M15 6l-6 6 6 6"></path>
+                </svg>
+            </button>
+            <button class="nav-button" id="nextBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24">
+                    <path fill="none" stroke="currentColor" stroke-width="2" d="M9 6l6 6-6 6"></path>
+                </svg>
+            </button>
+        </div>
+    
+        <div class="indicators" id="indicators"></div>
     </div>
- 
-    <div class="slider-container">
-      <div class="slider-wrapper" id="sliderWrapper">
-        <div class="slider-card">
-            <a href="#" style="text-decoration: none; color: inherit;">
-                <div class="card-content">
-                    <div class="card-image">
-                        <img src="imgs/1-removebg-preview.png" alt="Warm-Up Coding">
-                    </div>
-                    <div class="card-info">
-                        <span class="card-badge badge-new">New</span>
-                        <h3 class="card-title">Warm-Up Coding</h3>
-                        <p class="card-description">C/C++ system optimization, Python/PHP web solutions.</p>
-                        <p class="card-price"></p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="slider-card">
-            <a href="#" style="text-decoration: none; color: inherit;">
-                <div class="card-content">
-                    <div class="card-image">
-                        <img src="imgs/2-removebg-preview.png" alt="Trifecta of the Web">
-                    </div>
-                    <div class="card-info">
-                        <span class="card-badge badge-updated">Updated</span>
-                        <h3 class="card-title">Trifecta of the Web</h3>
-                        <p class="card-description">HTML/CSS design, JS interactive web apps.</p>
-                        <p class="card-price"></p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="slider-card">
-            <a href="#" style="text-decoration: none; color: inherit;">
-                <div class="card-content">
-                    <div class="card-image">
-                        <img src="imgs/MERN stack.svg" alt="MERN Stack">
-                    </div>
-                    <div class="card-info">
-                        <span class="card-badge badge-new">New</span>
-                        <h3 class="card-title">MERN Stack</h3>
-                        <p class="card-description">MongoDB, Express, React, Node full-stack JavaScript development.</p>
-                        <p class="card-price"></p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="slider-card">
-            <a href="#" style="text-decoration: none; color: inherit;">
-                <div class="card-content">
-                    <div class="card-image">
-                        <img src="imgs/java.svg" alt="JAVA">
-                    </div>
-                    <div class="card-info">
-                        <span class="card-badge badge-new">New</span>
-                        <h3 class="card-title">JAVA</h3>
-                        <p class="card-description">Java, Spring, Hibernate – robust backend development for enterprise applications.</p>
-                        <p class="card-price"></p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="slider-card">
-            <a href="#" style="text-decoration: none; color: inherit;">
-                <div class="card-content">
-                    <div class="card-image">
-                        <img src="imgs/devops-2.svg" alt="DevOps">
-                    </div>
-                    <div class="card-info">
-                        <span class="card-badge badge-updated">Updated</span>
-                        <h3 class="card-title">DevOps</h3>
-                        <p class="card-description">DevOps automates development, testing, deployment, and monitoring for efficiency.</p>
-                        <p class="card-price"></p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="slider-card">
-            <a href="#" style="text-decoration: none; color: inherit;">
-                <div class="card-content">
-                    <div class="card-image">
-                        <img src="imgs/MLOPS.png" alt="MLOps">
-                    </div>
-                    <div class="card-info">
-                        <span class="card-badge badge-new">New</span>
-                        <h3 class="card-title">MLOps</h3>
-                        <p class="card-description">Machine learning operations for streamlined AI deployment.</p>
-                        <p class="card-price"></p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="slider-card">
-          <a href="#" style="text-decoration: none; color: inherit;">
-              <div class="card-content">
-                  <div class="card-image">
-                      <img src="imgs/redhat.svg" alt="Red Hat Linux 9">
-                  </div>
-                  <div class="card-info">
-                      <span class="card-badge badge-new">New</span>
-                      <h3 class="card-title">Red Hat Linux 9</h3>
-                      <p class="card-description">Secure, stable, enterprise-grade operating system platform.</p>
-                      <p class="card-price"></p>
-                  </div>
-              </div>
-          </a>
-        </div>
-      </div>
-    </div>
-  
-    <div class="navigation-buttons">
-        <button class="nav-button" id="prevBtn">
-            <svg width="14" height="14" viewBox="0 0 24 24">
-                <path fill="none" stroke="currentColor" stroke-width="2" d="M15 6l-6 6 6 6"></path>
-            </svg>
-        </button>
-        <button class="nav-button" id="nextBtn">
-            <svg width="14" height="14" viewBox="0 0 24 24">
-                <path fill="none" stroke="currentColor" stroke-width="2" d="M9 6l6 6-6 6"></path>
-            </svg>
-        </button>
-    </div>
-  
-    <div class="indicators" id="indicators"></div>
-  </div>
- </div>
- 
+
  
  
 
